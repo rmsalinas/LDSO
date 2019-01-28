@@ -305,6 +305,10 @@ int main(int argc, char **argv) {
     }
     cout<<"WRITING OUTPUT TO"<<output_file<<endl;
 
+    if(cml["-timefile"]){
+        std::string commd="date > "+cml("-timefile");
+        system(commd.c_str());
+    }
     // to make MacOS happy: run this in dedicated thread -- and use this one to run the GUI.
     std::thread runthread([&]() {
         std::vector<int> idsToPlay;
@@ -372,6 +376,9 @@ int main(int argc, char **argv) {
                 LOG(INFO) << "Lost!";
                 break;
             }
+            fullSystem->printResult(output_file, true);
+            fullSystem->printResult(output_file+".noloop", false);
+
 
         }
 
@@ -387,7 +394,10 @@ int main(int argc, char **argv) {
         viewer->run();  // mac os should keep this in main thread.
 
     runthread.join();
-
+    if(cml["-timefile"]){
+        std::string commd="date >> "+cml("-timefile");
+        system(commd.c_str());
+    }
     fullSystem->printResult(output_file, true);
     fullSystem->printResult(output_file+".noloop", false);
 
