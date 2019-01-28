@@ -337,6 +337,7 @@ int main(int argc, char **argv) {
     ImageAndExposure *img ;
     int ii=0;
         while((img  = reader->getImage(ii))!=NULL){
+            img->timestamp=ii;
 
            fullSystem->addActiveFrame(img, ii++);
             delete img;
