@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
 
     CmdLineParser cml(argc,argv);
     if(argc<5 || cml["-h"]){
-        printf("Usage :  videofile  cameraparams.yml path_to_vocabulary outposes [-noX] [-realTime] \n");
+        printf("Usage :  videofile  cameraparams.yml path_to_vocabulary outposes [-noX] [-realTime] [-end X]\n");
         return -1;
     }
     settingsDefault(0);
@@ -279,6 +279,8 @@ int main(int argc, char **argv) {
     FLAGS_colorlogtostderr = true;
     setting_maxAffineWeight = 0.1;  // don't use affine brightness weight in Euroc!
     disableAllDisplay = cml["-noX"];
+    int end=std::numeric_limits<int>::max();
+    if(cml["-end"]) end=stoi(cml("-end"));
 
 //    for (int i = 1; i < argc; i++)
 //        parseArgument(argv[i]);
@@ -384,7 +386,7 @@ int main(int argc, char **argv) {
             }
 //            fullSystem->printResult(output_file, true);
 //            fullSystem->printResult(output_file+".noloop", false);
-            if( ii>=300)break;
+            if( ii>=end)break;
         }
         fullSystem->blockUntilMappingIsFinished();
         if(cml["-timefile"]){
@@ -421,6 +423,7 @@ int main(int argc, char **argv) {
                        LOG(INFO) << "Lost!";
                        break;
                    }
+                if( ii>=end)break;
                }
                fullSystem->blockUntilMappingIsFinished();
                printResult(output_file,poses);
