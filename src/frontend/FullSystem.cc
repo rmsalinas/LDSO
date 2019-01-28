@@ -66,9 +66,9 @@ namespace ldso {
         }
     }
 
-    void FullSystem::addActiveFrame(ImageAndExposure *image, int id) {
+    SE3 FullSystem::addActiveFrame(ImageAndExposure *image, int id) {
         if (isLost)
-            return;
+            return SE3();
         unique_lock<mutex> lock(trackMutex);
 
         LOG(INFO) << "*** taking frame " << id << " ***" << endl;
@@ -99,7 +99,7 @@ namespace ldso {
                 frame->poseValid = false;
                 frame->ReleaseAll();        // don't need this frame, release all the internal
             }
-            return;
+            return SE3();
         } else {
             // init finished, do tracking
             // =========================== SWAP tracking reference?. =========================
@@ -120,7 +120,7 @@ namespace ldso {
                 // invalid result
                 LOG(WARNING) << "Initial Tracking failed: LOST!" << endl;
                 isLost = true;
-                return;
+                return SE3();
             }
 
             bool needToMakeKF = false;
@@ -154,7 +154,7 @@ namespace ldso {
             LOG(INFO) << "deliver frame " << fh->frame->id << endl;
             deliverTrackedFrame(fh, needToMakeKF);
             LOG(INFO) << "add active frame returned" << endl << endl;
-            return;
+            return fh->frame->getPose();
         }
     }
 

@@ -62,7 +62,7 @@ namespace ldso {
         ~FullSystem();
 
         /// adds a new frame, and creates point & residual structs.
-        void addActiveFrame(ImageAndExposure *image, int id);
+        SE3 addActiveFrame(ImageAndExposure *image, int id);
 
         /// block the tracking until mapping is finished, return when mapping is finished.
         void blockUntilMappingIsFinished();

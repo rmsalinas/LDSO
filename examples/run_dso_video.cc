@@ -7,7 +7,7 @@
 #include <sys/time.h>
 
 #include <glog/logging.h>
-
+#include <iomanip>
 #include "frontend/FullSystem.h"
 #include "DatasetReader.h"
 #include "video_reader.h"
@@ -243,6 +243,27 @@ bool operator[] ( std::string param ) {int idx=-1;  for ( int i=0; i<argc && idx
 std::string operator()(std::string param,std::string defvalue=""){int idx=-1;    for ( int i=0; i<argc && idx==-1; i++ ) if ( std::string ( argv[i] ) ==param ) idx=i; if ( idx==-1 ) return defvalue;   else  return ( argv[  idx+1] ); }
 };
 
+void  printResult(const string &filename, const std::map<int,SE3> &poses) {
+
+
+    std::ofstream myfile(filename);
+    myfile << std::setprecision(15);
+
+    for (auto &fr : poses) {
+        SE3 Twc;
+        Sim3 Swc;
+
+            Twc = fr.second.inverse();
+
+        myfile << fr.first<<
+               " " << Twc.translation().transpose() <<
+               " " << Twc.so3().unit_quaternion().x() <<
+               " " << Twc.so3().unit_quaternion().y() <<
+               " " << Twc.so3().unit_quaternion().z() <<
+               " " << Twc.so3().unit_quaternion().w() << "\n";
+    }
+    myfile.close();
+}
 int main(int argc, char **argv) {
 
     CmdLineParser cml(argc,argv);
@@ -361,13 +382,51 @@ int main(int argc, char **argv) {
                 LOG(INFO) << "Lost!";
                 break;
             }
-            fullSystem->printResult(output_file, true);
-            fullSystem->printResult(output_file+".noloop", false);
+//            fullSystem->printResult(output_file, true);
+//            fullSystem->printResult(output_file+".noloop", false);
+            if( ii>=300)break;
         }
         fullSystem->blockUntilMappingIsFinished();
-        // for evaluation, we print the result before loop closing and after loop closing
-        fullSystem->printResult(output_file, true);
-        fullSystem->printResult(output_file+".noloop", false);
+        if(cml["-timefile"]){
+            std::string commd="date >> "+cml("-timefile");
+            system(commd.c_str());
+        }
+        //now, go again only for tracking
+
+        ii=0;
+        std::map<int,SE3> poses;
+               while((img  = reader->getImage(ii))!=NULL){
+                   img->timestamp=ii;
+
+                  SE3 pose=fullSystem->addActiveFrame(img, ii++);
+                  poses.insert({ii-1,pose});
+                  delete img;
+
+                   if (fullSystem->initFailed || setting_fullResetRequested) {
+                       if (ii < 250 || setting_fullResetRequested) {
+                           LOG(INFO) << "RESETTING!";
+                           fullSystem = shared_ptr<FullSystem>(new FullSystem(voc));
+                           fullSystem->setGammaFunction(reader->getPhotometricGamma());
+                           fullSystem->linearizeOperation = (playbackSpeed == 0);
+                           if (viewer) {
+                               viewer->reset();
+                               sleep(1);
+                               fullSystem->setViewer(viewer);
+                           }
+                           setting_fullResetRequested = false;
+                       }
+                   }
+
+                   if (fullSystem->isLost) {
+                       LOG(INFO) << "Lost!";
+                       break;
+                   }
+               }
+               fullSystem->blockUntilMappingIsFinished();
+               printResult(output_file,poses);
+
+
+
     });
 
     if (viewer)
