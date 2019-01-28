@@ -334,27 +334,11 @@ int main(int argc, char **argv) {
         clock_t started = clock();
         double sInitializerOffset = 0;
 
+    ImageAndExposure *img ;
+    int ii=0;
+        while((img  = reader->getImage(ii))!=NULL){
 
-        for (int ii = 0; ii < (int) idsToPlay.size(); ii++) {
-
-            while (setting_pause == true) {
-                usleep(5000);
-            }
-            if (!fullSystem->initialized)    // if not initialized: reset start time.
-            {
-                gettimeofday(&tv_start, NULL);
-                started = clock();
-                sInitializerOffset = timesToPlayAt[ii];
-            }
-
-            int i = idsToPlay[ii];
-
-            ImageAndExposure *img  = reader->getImage(i);
-
-
-            bool skipFrame = false;
-
-            if (!skipFrame) fullSystem->addActiveFrame(img, i);
+           fullSystem->addActiveFrame(img, ii++);
             delete img;
 
             if (fullSystem->initFailed || setting_fullResetRequested) {
@@ -378,16 +362,11 @@ int main(int argc, char **argv) {
             }
             fullSystem->printResult(output_file, true);
             fullSystem->printResult(output_file+".noloop", false);
-
-
         }
-
         fullSystem->blockUntilMappingIsFinished();
-        sleep(10);
         // for evaluation, we print the result before loop closing and after loop closing
         fullSystem->printResult(output_file, true);
         fullSystem->printResult(output_file+".noloop", false);
-
     });
 
     if (viewer)
