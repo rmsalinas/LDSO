@@ -184,6 +184,7 @@ private:
     {
 
         //if (slow) std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        vcap.set(CV_CAP_PROP_POS_FRAMES,id);
         bool res= vcap.grab();
         if (!res)return NULL;
         vcap.retrieve(_image);

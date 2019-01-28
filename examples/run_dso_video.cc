@@ -243,7 +243,7 @@ bool operator[] ( std::string param ) {int idx=-1;  for ( int i=0; i<argc && idx
 std::string operator()(std::string param,std::string defvalue=""){int idx=-1;    for ( int i=0; i<argc && idx==-1; i++ ) if ( std::string ( argv[i] ) ==param ) idx=i; if ( idx==-1 ) return defvalue;   else  return ( argv[  idx+1] ); }
 };
 
-void  printResult(const string &filename, const std::map<int,SE3> &poses) {
+void  printResult(const string &filename, const std::vector< std::pair<int,SE3> > &poses) {
 
 
     std::ofstream myfile(filename);
@@ -334,28 +334,8 @@ int main(int argc, char **argv) {
     }
     // to make MacOS happy: run this in dedicated thread -- and use this one to run the GUI.
     std::thread runthread([&]() {
-        std::vector<int> idsToPlay;
-        std::vector<double> timesToPlayAt;
-        for (int i = lstart; i >= 0 && i < reader->getNumImages() && linc * i < linc * lend; i += linc) {
-
-            idsToPlay.push_back(i);
-            if (timesToPlayAt.size() == 0) {
-                timesToPlayAt.push_back((double) 0);
-            } else {
-                double tsThis = reader->getTimestamp(idsToPlay[idsToPlay.size() - 1]);
-                double tsPrev = reader->getTimestamp(idsToPlay[idsToPlay.size() - 2]);
-                timesToPlayAt.push_back(timesToPlayAt.back() + fabs(tsThis - tsPrev) / playbackSpeed);
-            }
-        }
 
 
-        std::vector<ImageAndExposure *> preloadedImages;
-
-
-        struct timeval tv_start;
-        gettimeofday(&tv_start, NULL);
-        clock_t started = clock();
-        double sInitializerOffset = 0;
 
     ImageAndExposure *img ;
     int ii=0;
@@ -384,24 +364,21 @@ int main(int argc, char **argv) {
                 LOG(INFO) << "Lost!";
                 break;
             }
-//            fullSystem->printResult(output_file, true);
-//            fullSystem->printResult(output_file+".noloop", false);
             if( ii>=end)break;
         }
-        fullSystem->blockUntilMappingIsFinished();
         if(cml["-timefile"]){
             std::string commd="date >> "+cml("-timefile");
             system(commd.c_str());
         }
         //now, go again only for tracking
-
         ii=0;
-        std::map<int,SE3> poses;
+        std::vector< std::pair<int,SE3> > poses;
                while((img  = reader->getImage(ii))!=NULL){
                    img->timestamp=ii;
+                   cout<<"TIME="<<ii<<endl;
 
                   SE3 pose=fullSystem->addActiveFrame(img, ii++);
-                  poses.insert({ii-1,pose});
+                  poses.push_back({ii-1,pose});
                   delete img;
 
                    if (fullSystem->initFailed || setting_fullResetRequested) {
@@ -423,25 +400,26 @@ int main(int argc, char **argv) {
                        LOG(INFO) << "Lost!";
                        break;
                    }
-                if( ii>=end)break;
+                if( ii>=end)
+                    break;
+               }
+               //
+               printResult(output_file,poses);
+               if(cml["-timefile"]){
+                   std::string commd="date >> "+cml("-timefile");
+                   system(commd.c_str());
                }
                fullSystem->blockUntilMappingIsFinished();
-               printResult(output_file,poses);
-
-
-
+               sleep(10);
     });
 
     if (viewer)
         viewer->run();  // mac os should keep this in main thread.
 
     runthread.join();
-    if(cml["-timefile"]){
-        std::string commd="date >> "+cml("-timefile");
-        system(commd.c_str());
-    }
-    fullSystem->printResult(output_file, true);
-    fullSystem->printResult(output_file+".noloop", false);
+
+//    fullSystem->printResult(output_file, true);
+//    fullSystem->printResult(output_file+".noloop", false);
 
     LOG(INFO) << "EXIT NOW!";
     return 0;

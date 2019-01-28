@@ -151,11 +151,13 @@ namespace ldso {
                 viewer->publishCamPose(fh->frame, Hcalib->mpCH);
 
             lock.unlock();
+            SE3 retPose=fh->frame->getPose();
             LOG(INFO) << "deliver frame " << fh->frame->id << endl;
             deliverTrackedFrame(fh, needToMakeKF);
             LOG(INFO) << "add active frame returned" << endl << endl;
-            return fh->frame->getPose();
+            return retPose;
         }
+        return SE3();
     }
 
     void FullSystem::deliverTrackedFrame(shared_ptr<FrameHessian> fh, bool needKF) {
