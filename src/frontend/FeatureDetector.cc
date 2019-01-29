@@ -33,7 +33,7 @@ namespace ldso {
 
     int FeatureDetector::DetectCorners(int nFeatures, shared_ptr<Frame> &frame) {
 
-        cout<<"WW="<<wG[0]<<" "<<hG[0]<<endl;
+
         // grid it
         int gridsize = int(sqrtf(wG[0] * hG[0] / nFeatures) + 0.5);
         int gridX = wG[0] / gridsize + 1, gridY = hG[0] / gridsize + 1;
@@ -101,7 +101,7 @@ namespace ldso {
         for (auto &feat: frame->features) {
             if (feat->score > scoreTH) {
                 //is into limits
-                if( feat->uv[0]>HALF_PATCH_SIZE && feat->uv[1]>HALF_PATCH_SIZE   && feat->uv[0]< (wG[0]-HALF_PATCH_SIZE) && feat->uv[1]<(hG[0]-HALF_PATCH_SIZE)){
+                if( feat->uv[0]>HALF_PATCH_SIZE && feat->uv[1]>HALF_PATCH_SIZE   && feat->uv[0]< (wG[feat->level]-HALF_PATCH_SIZE) && feat->uv[1]<(hG[feat->level]-HALF_PATCH_SIZE)){
                     feat->isCorner = true;
                     corners.push_back(feat);
                 }
