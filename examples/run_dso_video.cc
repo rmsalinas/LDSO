@@ -336,14 +336,16 @@ int main(int argc, char **argv) {
     std::thread runthread([&]() {
 
 
+        std::vector< std::pair<int,SE3> > first_poses;
 
     ImageAndExposure *img ;
     int ii=0;
         while((img  = reader->getImage(ii))!=NULL){
             img->timestamp=ii;
 
-           fullSystem->addActiveFrame(img, ii++);
-            delete img;
+           SE3 pose=fullSystem->addActiveFrame(img, ii++);
+           first_poses.push_back({ii-1,pose});
+           delete img;
 
             if (fullSystem->initFailed || setting_fullResetRequested) {
                 if (ii < 250 || setting_fullResetRequested) {
@@ -364,8 +366,25 @@ int main(int argc, char **argv) {
                 LOG(INFO) << "Lost!";
                 break;
             }
+
             if( ii>=end)break;
         }
+
+
+        string prePosesFile=string(argv[4]);
+        if(prePosesFile.find_last_of("/")){
+            int n=prePosesFile.find_last_of("/");
+            string pre,post;
+            for(int i=0;i<=n;i++)pre.push_back(prePosesFile[i]);
+            for(int i=n+1;i<prePosesFile.size();i++)post.push_back(prePosesFile[i]);
+            post="first_"+post;
+            prePosesFile=pre+post;
+        }
+        cout<<"Saving pose file "<<prePosesFile<<endl;
+        printResult(prePosesFile,first_poses);
+        exit(0);
+
+
         if(cml["-timefile"]){
             std::string commd="date >> "+cml("-timefile");
             system(commd.c_str());
